@@ -105,7 +105,7 @@ void main() {
 
 ### Character Set
 
-The character set of TyC is ASCII. Blank (`' '`), tab (`'\t'`), form feed (i.e., the ASCII FF) (`'\f'`), carriage return (i.e., the ASCII CR – `'\r'`) and newline (i.e., the ASCII LF – `'\n'`) are whitespace characters. The `'\n'` is used as newline character in TyC.
+The character set of TyC is extended ASCII (characters with code points 0-255). Blank (`' '`), tab (`'\t'`), form feed (i.e., the ASCII FF) (`'\f'`), carriage return (i.e., the ASCII CR – `'\r'`) and newline (i.e., the ASCII LF – `'\n'`) are whitespace characters. The `'\n'` is used as newline character in TyC.
 
 This definition of lines can be used to determine the line numbers produced by a TyC compiler.
 
@@ -194,26 +194,36 @@ Float literals are of type **float**.
 
 #### String literals
 
-**String literals** consist of zero or more characters enclosed by double quotes (`"`). Use escape sequences (listed below) to represent special characters within a string.  
+**String literals** consist of zero or more characters enclosed by double quotes (`"`). A string literal can contain any character from the extended ASCII character set (code points 0-255), with the following restrictions:
 
-It is a compile-time error for a new line or EOF character to appear inside a string literal.  
-All the supported escape sequences are as follows:
+- **Newline (`\n`) and carriage return (`\r`) characters** cannot appear directly in a string literal. They must be represented using escape sequences (`\n` and `\r` respectively).
+- **Backslash (`\`)** and **double quote (`"`)** characters must be escaped when they appear in the string content (using `\\` and `\"` respectively).
+- **All other characters**, including unprintable ASCII characters (0-31) other than `\n` and `\r`, can appear directly in string literals without requiring escape sequences. However, for readability and portability, it is recommended to use escape sequences for unprintable characters when possible.
+
+**Escape sequences** are used to represent special characters within a string. All the supported escape sequences are as follows:
 
 ```
-\b   backspace
-\f   formfeed
-\r   carriage return
-\n   newline
-\t   horizontal tab
-\"   double quote
-\\   backslash
+\b   backspace (ASCII 8)
+\f   formfeed (ASCII 12)
+\r   carriage return (ASCII 13)
+\n   newline (ASCII 10)
+\t   horizontal tab (ASCII 9)
+\"   double quote (ASCII 34)
+\\   backslash (ASCII 92)
 ```
+
+It is a compile-time error for:
+- A newline (`\n`) or carriage return (`\r`) character to appear directly (unescaped) inside a string literal.
+- An EOF character to appear inside a string literal (i.e., the string literal is not closed before end of file).
+- An illegal escape sequence to appear (any backslash followed by a character that is not one of the supported escape characters: `b`, `f`, `r`, `n`, `t`, `"`, `\`).
 
 The following are valid examples of string literals:
 ```tyc
 "This is a string containing tab \t"
 "He asked me: \"Where is John?\""
 ""
+"String with unprintable: \x01"  // Character with code 1 can appear directly
+"Extended ASCII: \x80\xFF"        // Extended ASCII characters (128-255) are allowed
 ```
 
 A string literal has a type of **string**.
