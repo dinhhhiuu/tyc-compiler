@@ -285,7 +285,7 @@ struct Address {
 
 **Inference:** With init → from the initializer; without init → from first use that fixes the type. Otherwise this error.
 
-**Reporting:** One semantic error per run; first failure wins. Snippets below are separate illustrations, not one pasteable program.
+**Reporting:** One semantic error per run. Among `TypeCannotBeInferred` failures, the first one hit during the semantic visit is reported. Program-wide ordering (first failure along the visit, not a global sort by error tier) is defined under **Error Detection Priority** in Implementation Guidelines. Snippets below are separate illustrations, not one pasteable program.
 
 ```tyc
 // Error: neither auto has a known type — cannot use x + y
@@ -327,7 +327,7 @@ void mixed_decl() {
 // Error: `auto x` is still unknown when typing `x + "hello"` (same message if only `x` is declared)
 void string_mix() {
     auto x;
-    auto y;  // unused; mirrors reference test_066 — failure is on the next line’s initializer
+    auto y;  // unused here; failure is reported on the next line’s initializer
     auto result = x + "hello";  // TypeCannotBeInferred(BinaryOp(Identifier(x), +, StringLiteral('hello')))
 }
 
@@ -830,14 +830,18 @@ void nestedLoops() {
 
 ### Error Detection Priority
 
-When multiple errors are present, report them in the following order:
+**Single-pass, first failure wins (program-wide).** The checker performs one semantic **visit** over the program (typical depth-first walk). The **only** error reported is the **first** semantic failure encountered along that visit. **Tier numbers do not promote a later failure ahead of an earlier one:** the visit is not extended to discover all failures and then choose by smallest tier. The tiers below classify error **kinds** and define **tie-breaking within the same tier**; they do not impose a global priority queue over the whole program.
+
+**Error tiers** (for documentation and same-tier ties):
 
 1. **Declaration errors** (Redeclared, UndeclaredIdentifier, UndeclaredFunction, UndeclaredStruct)
 2. **Type inference errors** (`TypeCannotBeInferred`; see section 5)
 3. **Type errors** (TypeMismatchInStatement, TypeMismatchInExpression)
 4. **Control flow errors** (MustInLoop)
 
-**Within one tier:** report the **first** failure encountered during the semantic **visit** (order depends on how constructs are checked, not on source left-to-right alone). **One** error per run; use the **reference test suite** as ground truth.
+**Within one tier:** if more than one failure in that tier would arise before the checker stops, report the **first** in visit order (order depends on how constructs are checked, not on source left-to-right alone).
+
+**One** error per run.
 
 ### Scope Management
 
@@ -882,4 +886,4 @@ A TyC program must have at least one function named `main` that takes no paramet
 ---
 
 *Document prepared for TyC Static Semantic Analysis*  
-*Last updated: January 2026*
+*Last updated: April 2026*
